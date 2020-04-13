@@ -181,7 +181,7 @@ ConsoleFunctionWithDocs(quitWithErrorMessage, ConsoleVoid, 2, 2, (msg string))
 ConsoleFunctionWithDocs( gotoWebPage, ConsoleVoid, 2, 2, ( address ))
 {
    TORQUE_UNUSED( argc );
-   const char* protocolSep = dStrstr(argv[1],"://");
+   char* protocolSep = dStrstr(argv[1],"://");
 
    if( protocolSep != NULL )
    {

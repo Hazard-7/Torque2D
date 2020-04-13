@@ -55,7 +55,7 @@
         else
         {
             // detect *.*
-            if (dStrstr(token, "*.*"))
+            if (dStrstr((const char *) token, "*.*"))
             {
                 fileTypes.any = true;
             }

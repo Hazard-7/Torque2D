@@ -60,11 +60,6 @@
 
 class ColorI;
 class ColorF;
-struct NetAddress;
-class RawData;
-// class String;
-class NetSocket;
-
 
 //------------------------------------------------------------------------------
 //-------------------------------------- Base Stream class
@@ -163,15 +158,6 @@ class Stream {
    /// Read a floating point color from the stream.
    bool read(ColorF*);
 
-   /// Write a network address to the stream.
-   bool write(const NetAddress &);
-   /// Read a network address from the stream.
-   bool read(NetAddress*);
-
-   /// Write a network socket to the stream.
-   bool write(const NetSocket &);
-   /// Read a network socket from the stream.
-   bool read(NetSocket*);
 
    // Overloaded write and read ops..
   public:

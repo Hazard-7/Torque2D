@@ -152,7 +152,7 @@ extern void _iOSGameInnerLoop();
     
     retinaEnabled = false;
     
-    if([[UIScreen mainScreen] respondsToSelector:@selector(scale)] && [[UIScreen mainScreen] scale] > 1)
+    if([[UIScreen mainScreen] respondsToSelector:@selector(scale)] && [[UIScreen mainScreen] scale] == 2)
         retinaEnabled = true;
     
     UIApplication * application = [UIApplication sharedApplication];

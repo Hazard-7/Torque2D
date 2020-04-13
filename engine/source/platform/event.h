@@ -34,9 +34,30 @@
 #ifndef _PLATFORM_MEMORY_H_
 #include "platform/platformMemory.h"
 #endif
-#include "platform/platformNet.h"
 
 typedef int NetConnectionId;
+
+/// Generic network address
+///
+/// This is used to represent IP addresses.
+struct NetAddress {
+   int type;        ///< Type of address (IPAddress currently)
+
+   /// Acceptable NetAddress types.
+   enum {
+      IPAddress,
+      IPXAddress
+   };
+
+   U8 netNum[4];    ///< For IP:  sin_addr<br>
+                    ///  For IPX: sa_netnum
+
+   U8 nodeNum[6];   ///< For IP:  Not used.<br>
+                    ///  For IPX: sa_nodenum (not used by IP)
+
+   U16  port;       ///< For IP:  sin_port<br>
+                    ///  For IPX: sa_socket
+};
 
 enum EventConstants
 {
@@ -87,14 +108,14 @@ struct ConnectedNotifyEvent : public Event
    };
 
    U32 state;   ///< Indicates current connection state.
-	NetSocket tag;     ///< Identifies connection.
+   U32 tag;     ///< Identifies connection.
    ConnectedNotifyEvent() { type = ConnectedNotifyEventType; size = sizeof(ConnectedNotifyEvent); }
 };
 
 /// Triggered when we receive data from a connected entity.
 struct ConnectedReceiveEvent : public Event
 {
-   NetSocket tag;     ///< Identifies connection
+   U32 tag;     ///< Identifies connection
    U8 data[MaxPacketDataSize];  /// Payload
    ConnectedReceiveEvent() { type = ConnectedReceiveEventType; }
 };
@@ -102,8 +123,8 @@ struct ConnectedReceiveEvent : public Event
 /// Triggered when we accept a new connection.
 struct ConnectedAcceptEvent : public Event
 {
-   NetSocket portTag;         ///< Identifies port we received this connection on.
-	NetSocket connectionTag;   ///< Identifies the connection.
+   U32 portTag;         ///< Identifies port we received this connection on.
+   U32 connectionTag;   ///< Identifies the connection.
    NetAddress address;  ///< Originating address of connection.
    ConnectedAcceptEvent() { type = ConnectedAcceptEventType; size = sizeof(ConnectedAcceptEvent); }
 };
@@ -452,6 +473,14 @@ enum GestureCodes
     SI_SCALE_GESTURE     = 0x408
 };
 
+enum LeapMotionCodes
+{
+    LM_HANDAXIS          = 0x409,
+    LM_HANDROT           = 0x40A,
+    LM_HANDPOS           = 0x40B,
+    LM_FINGERPOS         = 0x40C,
+};
+
 /// Input device types
 enum InputDeviceTypes
 {
@@ -463,7 +492,8 @@ enum InputDeviceTypes
    XInputDeviceType,
    ScreenTouchDeviceType,
    AccelerometerDeviceType,
-   GyroscopeDeviceType
+   GyroscopeDeviceType,
+   LeapMotionDeviceType
 };
 
 /// Device Event Action Types
@@ -482,6 +512,7 @@ enum InputDeviceTypes
 #define SI_TOUCH             0x0C
 #define SI_GESTURE           0x0D
 #define SI_MOTION            0x0F
+#define SI_LEAP              0x11
 
 /// Event SubTypes
 #define SI_ANY       0xff

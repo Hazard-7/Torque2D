@@ -52,36 +52,6 @@ bool isCachePath(const char* path)
 
 	if (path[0] == '/')
 	{
-		if (strstr(path, Platform::osGetTemporaryDirectory()) != NULL)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
-	{
-		const char* tmp = Platform::osGetTemporaryDirectory();
-		if (strstr(path, tmp+1) != NULL)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-}
-
-bool isUserDataPath(const char* path)
-{
-	if (!path || !*path)
-	      return false;
-
-	if (path[0] == '/')
-	{
 		if (strstr(path, Platform::getUserDataDirectory()) != NULL)
 		{
 			return true;
@@ -172,7 +142,7 @@ File::~File()
 File::Status File::open(const char *filename, const AccessMode openMode)
 {
 	//If its a cache path then we need to open it using C methods not AssetManager
-   if (isCachePath(filename) || isUserDataPath(filename))
+   if (isCachePath(filename))
    {
 	  if (dStrlen(filename) > MAX_MAC_PATH_LONG)
 	   	  Con::warnf("File::open: Filename length is pretty long...");
@@ -185,14 +155,7 @@ File::Status File::open(const char *filename, const AccessMode openMode)
 	  switch (openMode)
 	  {
 	  case Read:
-         capability = FileRead;
-         filePointer = 0;
-         buffer = (U8*)_AndroidLoadInternalFile(filename, &size);
-         if (buffer == NULL)
-            currentStatus = UnknownError;
-         else
-            currentStatus = Ok;
-         return currentStatus;
+		 handle = (void *)fopen(filename, "rb"); // read only
 		 break;
 	  case Write:
 		 handle = (void *)fopen(filename, "wb"); // write only
@@ -831,7 +794,7 @@ bool Platform::isFile(const char *path)
    if (!path || !*path) 
       return false;
 
-   if (isCachePath(path) || isUserDataPath(path))
+   if (isCachePath(path))
    {
 	  // make sure we can stat the file
 	  struct stat statData;
@@ -861,7 +824,7 @@ bool Platform::isDirectory(const char *path)
    if (!path || !*path) 
       return false;
    
-   if (isCachePath(path) || isUserDataPath(path))
+   if (isCachePath(path))
    {
 	  // make sure we can stat the file
 	  struct stat statData;
@@ -884,7 +847,7 @@ S32 Platform::getFileSize(const char* pFilePath)
    if (!pFilePath || !*pFilePath) 
       return 0;
    
-   if (isCachePath(pFilePath) || isUserDataPath(pFilePath))
+   if (isCachePath(pFilePath))
    {
 	  struct stat statData;
 	  if( stat(pFilePath, &statData) < 0 )
@@ -936,7 +899,7 @@ inline bool isGoodDirectoryCache(dirent* entry)
 //-----------------------------------------------------------------------------
 bool Platform::hasSubDirectory(const char *path) 
 {
-	if (isCachePath(path) || isUserDataPath(path))
+	if (isCachePath(path))
 	{
 	   DIR *dir;
 	   dirent *entry;
@@ -1128,7 +1091,7 @@ bool recurseDumpDirectoriesCache(const char *basePath, const char *path, Vector<
 //-----------------------------------------------------------------------------
 bool Platform::dumpDirectories(const char *path, Vector<StringTableEntry> &directoryVector, S32 depth, bool noBasePath)
 {
-	if (isCachePath(path) || isUserDataPath(path))
+	if (isCachePath(path))
 	{
 	   PROFILE_START(dumpDirectories);
 
@@ -1284,7 +1247,7 @@ static bool recurseDumpPathCache(const char* curPath, Vector<Platform::FileInfo>
 //-----------------------------------------------------------------------------
 bool Platform::dumpPath(const char *path, Vector<Platform::FileInfo>& fileVector, S32 depth)
 {
-	if (isCachePath(path) || isUserDataPath(path))
+	if (isCachePath(path))
 	{
 		PROFILE_START(dumpPath);
 		const S32 len = dStrlen(path) + 1;

@@ -411,7 +411,7 @@ const char* Platform::getClipboard()
 //-----------------------------------------------------------------------------
 bool Platform::setClipboard(const char *text)
 {
-	return false;//no clipboard on Android
+	return NULL;//no clipboard on Android
 }
 
 #pragma mark ---- Cursor Functions ----

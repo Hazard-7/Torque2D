@@ -48,8 +48,8 @@
 static S32 DebuggerVersion = 0;
 static S32 DebuggerPort = 0;
 static StringTableEntry DebuggerPassword = NULL;
-static NetSocket ServerSocket = NetSocket::INVALID;
-static NetSocket ClientSocket = NetSocket::INVALID;
+static NetSocket ServerSocket = InvalidSocket;
+static NetSocket ClientSocket = InvalidSocket;
 static RemoteDebuggerBridge::ConnectionState BridgeState = RemoteDebuggerBridge::Closed;
 
 //-----------------------------------------------------------------------------
@@ -172,18 +172,15 @@ bool RemoteDebuggerBridge::open( const S32 debuggerVersion, const S32 port, cons
     ServerSocket = Net::openSocket();
 
     // Did we get a valid server socket?
-    if ( ServerSocket == NetSocket::INVALID )
+    if ( ServerSocket == InvalidSocket )
     {
         // No, so warn.
         Con::warnf( "Could not open a remote debugger server socket. " );
         return false;
     }
-	 NetAddress address;
-	 Net::getIdealListenAddress(&address);
-	 address.port = DebuggerPort;
 
     // Start the server listening.
-    Net::bindAddress( address, ServerSocket);
+    Net::bind( ServerSocket, DebuggerPort );
     Net::listen( ServerSocket, 4 );
     Net::setBlocking( ServerSocket, false );
 
@@ -241,13 +238,13 @@ void RemoteDebuggerBridge::WaitForClientConnection( void )
         NetSocket socket = Net::accept( ServerSocket, &address );
 
         // Skip if we don't have a valid socket.
-        if ( socket == NetSocket::INVALID)
+        if ( socket == InvalidSocket )
             continue;
 
         // Info.
-        Con::printf( "Client connected to remote debugger (port '%d') at %d (port %d).",
+        Con::printf( "Client connected to remote debugger (port '%d') at %d.%d.%d.%d (port %d).",
             DebuggerPort,
-            socket.getHash(), 
+            address.netNum[0], address.netNum[1], address.netNum[2], address.netNum[3], 
             address.port );
 
         // Set client socket.

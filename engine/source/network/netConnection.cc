@@ -57,7 +57,6 @@ class ConnectionMessageEvent : public NetEvent
    U32 message;
    U32 ghostCount;
 public:
-   typedef NetEvent Parent;
    ConnectionMessageEvent(U32 msg=0, U32 seq=0, U32 gc=0)
       { message = msg; sequence = seq; ghostCount = gc;}
    void pack(NetConnection *, BitStream *bstream)
@@ -102,7 +101,7 @@ bool NetConnection::mFilesWereDownloaded = false;
 
 static inline U32 HashNetAddress(const NetAddress *addr)
 {
-   return addr->getHash() % NetConnection::HashTableSize;
+   return *((U32 *)addr->netNum) % NetConnection::HashTableSize;
 }
 
 NetConnection *NetConnection::lookup(const NetAddress *addr)
@@ -160,7 +159,7 @@ U32 NetConnection::getSequence()
 static U32 gPacketRateToServer = 32;
 static U32 gPacketUpdateDelayToServer = 32;
 static U32 gPacketRateToClient = 10;
-static U32 gPacketSize = 508;
+static U32 gPacketSize = 200;
 
 void NetConnection::consoleInit()
 {
@@ -224,7 +223,6 @@ void NetConnection::setNetClassGroup(U32 grp)
 }
 
 NetConnection::NetConnection()
- : mNetAddress()
 {
    mTranslateStrings = false;
    mConnectSequence = 0;
@@ -304,13 +302,10 @@ NetConnection::NetConnection()
    mCurrentFileBufferSize = 0;
    mCurrentFileBufferOffset = 0;
    mNumDownloadedFiles = 0;
-   // Ensure NetAddress is cleared
-   dMemset(&mNetAddress, '\0', sizeof(NetAddress));
 }
 
 NetConnection::~NetConnection()
 {
-	GNet->removePendingConnection(this);
    AssertFatal(mNotifyQueueHead == NULL, "Uncleared notifies remain.");
    netAddressTableRemove();
 
@@ -465,14 +460,14 @@ void NetConnection::handlePacket(BitStream *bstream)
 
    if(bstream->readFlag())
    {
-      mCurRate.updateDelay = bstream->readInt(12);
-      mCurRate.packetSize = bstream->readInt(12);
+      mCurRate.updateDelay = bstream->readInt(10);
+      mCurRate.packetSize = bstream->readInt(10);
    }
 
    if(bstream->readFlag())
    {
-      U32 omaxDelay = bstream->readInt(12);
-      S32 omaxSize = bstream->readInt(12);
+      U32 omaxDelay = bstream->readInt(10);
+      S32 omaxSize = bstream->readInt(10);
       if(omaxDelay < mMaxRate.updateDelay)
          omaxDelay = mMaxRate.updateDelay;
       if(omaxSize > mMaxRate.packetSize)
@@ -561,14 +556,14 @@ void NetConnection::checkPacketSend(bool force)
 
    if(stream->writeFlag(mCurRate.changed))
    {
-      stream->writeInt(mCurRate.updateDelay, 12);
-      stream->writeInt(mCurRate.packetSize, 12);
+      stream->writeInt(mCurRate.updateDelay, 10);
+      stream->writeInt(mCurRate.packetSize, 10);
       mCurRate.changed = false;
    }
    if(stream->writeFlag(mMaxRate.changed))
    {
-      stream->writeInt(mMaxRate.updateDelay, 12);
-      stream->writeInt(mMaxRate.packetSize, 12);
+      stream->writeInt(mMaxRate.updateDelay, 10);
+      stream->writeInt(mMaxRate.packetSize, 10);
       mMaxRate.changed = false;
    }
    DEBUG_LOG(("PKLOG %d START", getId()) );

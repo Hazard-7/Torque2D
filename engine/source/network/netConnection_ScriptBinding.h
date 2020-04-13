@@ -146,7 +146,7 @@ ConsoleMethodWithDocs(NetConnection, getGhostID, ConsoleInt, 3, 3, ( S32 realID 
 ConsoleMethodWithDocs(NetConnection, connect, ConsoleVoid, 3, 3, ( remoteAddress ))
 {
    NetAddress addr;
-   if(Net::stringToAddress(argv[2], &addr) != Net::NoError)
+   if(!Net::stringToAddress(argv[2], &addr))
    {
       Con::errorf("NetConnection::connect: invalid address - %s", argv[2]);
       return;
@@ -163,14 +163,11 @@ ConsoleMethodWithDocs(NetConnection, connectLocal, ConsoleString, 2, 2, ())
    ConsoleObject *co = ConsoleObject::create(object->getClassName());
    NetConnection *client = object;
    NetConnection *server = dynamic_cast<NetConnection *>(co);
+   const char *error = NULL;
    BitStream *stream = BitStream::getPacketStream();
 
    if(!server || !server->canRemoteCreate())
-	{
-		delete co;
-		return "error";
-	}
-
+       goto errorOut;
    server->registerObject();
    server->setIsLocalClientConnection();
 
@@ -179,34 +176,18 @@ ConsoleMethodWithDocs(NetConnection, connectLocal, ConsoleString, 2, 2, ())
    client->setRemoteConnectionObject(server);
    server->setRemoteConnectionObject(client);
 
-	//We need to reset the maxrate's here, because we
-	// can't test if it is a local connection until RemoteConnectionObject
-	// has been set
-	server->checkMaxRate();
-	client->checkMaxRate();
-
    stream->setPosition(0);
    client->writeConnectRequest(stream);
    stream->setPosition(0);
-
-	const char* error;
    if(!server->readConnectRequest(stream, &error))
-	{
-		client->onConnectionRejected(error);
-		server->deleteObject();
-		return "error";
-	}
+      goto errorOut;
 
    stream->setPosition(0);
    server->writeConnectAccept(stream);
    stream->setPosition(0);
 
    if(!client->readConnectAccept(stream, &error))
-	{
-		client->handleStartupError(error);
-		server->deleteObject();
-		return "error";
-	}
+      goto errorOut;
 
    client->onConnectionEstablished(true);
    server->onConnectionEstablished(false);
@@ -216,8 +197,14 @@ ConsoleMethodWithDocs(NetConnection, connectLocal, ConsoleString, 2, 2, ())
    server->setConnectSequence(0);
    NetConnection::setLocalClientConnection(server);
    server->assignName("LocalClientConnection");
-
    return "";
+
+errorOut:
+   server->deleteObject();
+   client->deleteObject();
+   if(!error)
+      error = "Unknown Error";
+   return error;
 }
 
 /*! Use the getGhostsActive method to determine how many ghosts are active on a particular connection.

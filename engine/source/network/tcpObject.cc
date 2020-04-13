@@ -28,7 +28,6 @@
 #include "sim/simBase.h"
 #include "console/consoleInternal.h"
 #include "game/defaultGame.h"
-#include "collection/vector.h"
 
 #ifdef TORQUE_OS_IOS
 #include "platformiOS/iOSUtil.h"
@@ -42,8 +41,8 @@ IMPLEMENT_CONOBJECT(TCPObject);
 
 TCPObject *TCPObject::find(NetSocket tag)
 {
-   for(TCPObject *walk = table[tag.getHash() & TableMask]; walk; walk = walk->mNext)
-      if(walk->mTag.getHash() == tag.getHash())
+   for(TCPObject *walk = table[U32(tag) & TableMask]; walk; walk = walk->mNext)
+      if(walk->mTag == tag)
          return walk;
    return NULL;
 }
@@ -52,13 +51,13 @@ void TCPObject::addToTable(NetSocket newTag)
 {
    removeFromTable();
    mTag = newTag;
-   mNext = table[mTag.getHash() & TableMask];
-   table[mTag.getHash() & TableMask] = this;
+   mNext = table[U32(mTag) & TableMask];
+   table[U32(mTag) & TableMask] = this;
 }
 
 void TCPObject::removeFromTable()
 {
-   for(TCPObject **walk = &table[mTag.getHash() & TableMask]; *walk; walk = &((*walk)->mNext))
+   for(TCPObject **walk = &table[U32(mTag) & TableMask]; *walk; walk = &((*walk)->mNext))
    {
       if(*walk == this)
       {
@@ -73,7 +72,7 @@ TCPObject::TCPObject()
    mBuffer = NULL;
    mBufferSize = 0;
    mPort = 0;
-   mTag = NetSocket::INVALID;
+   mTag = InvalidSocket;
    mNext = NULL;
    mState = Disconnected;
 }
@@ -90,7 +89,7 @@ bool TCPObject::processArguments(S32 argc, const char **argv)
       return true;
    else if(argc == 1)
    {
-      addToTable(NetSocket::fromHandle(dAtoi(argv[0])));
+      addToTable(U32(dAtoi(argv[0])));
       return true;
    }
    return false;
@@ -222,21 +221,6 @@ void TCPObject::finishLastLine()
    }
 }
 
-bool TCPObject::isBufferEmpty()
-{
-   return (mBufferSize <= 0);
-}
-
-void TCPObject::emptyBuffer()
-{
-   if(mBufferSize)
-   {
-      dFree(mBuffer);
-      mBuffer = 0;
-      mBufferSize = 0;
-   }
-}
-
 void TCPObject::onDisconnect()
 {
    finishLastLine();
@@ -247,7 +231,7 @@ void TCPObject::onDisconnect()
 void TCPObject::listen(U16 port)
 {
    mState = Listening;
-	NetSocket newTag = Net::openListenPort(port);
+   U32 newTag = Net::openListenPort(port);
    addToTable(newTag);
 }
 
@@ -276,11 +260,11 @@ void TCPObject::openAndConnect(const char *address)
 
 void TCPObject::disconnect()
 {
-   if( mTag != NetSocket::INVALID ) {
+   if( mTag != InvalidSocket ) {
       Net::closeConnectTo(mTag);
    }
    removeFromTable();
-   mTag = NetSocket::INVALID;
+   mTag = InvalidSocket;
 }
 
 
@@ -361,24 +345,6 @@ void DefaultGame::processConnectedReceiveEvent(ConnectedReceiveEvent* event )
       size -= ret;
       buffer += ret;
    }
-
-   //If our buffer now has something in it then it's probably a web socket packet and lets handle it
-   if(!tcpo->isBufferEmpty())
-   {
-      //Copy all the data into a string (may be a quicker way of doing this)
-      U8 *data = event->data;
-
-      //Send the packet to script
-		bool handled = Con::executef(tcpo, 2, "onPacket", data);
-
-      //If the script did something with it, clear the buffer
-      if(handled)
-      {
-         tcpo->emptyBuffer();
-      }
-   }
-
-	 Con::executef(tcpo, 1, "onEndReceive");
 }
 
 void DefaultGame::processConnectedAcceptEvent( ConnectedAcceptEvent* event )
@@ -386,7 +352,7 @@ void DefaultGame::processConnectedAcceptEvent( ConnectedAcceptEvent* event )
    TCPObject *tcpo = TCPObject::find(event->portTag);
    if(!tcpo)
       return;
-   tcpo->onConnectionRequest(&event->address, event->connectionTag.getHandle());
+   tcpo->onConnectionRequest(&event->address, event->connectionTag);
 }
 
 void DefaultGame::processConnectedNotifyEvent( ConnectedNotifyEvent* event )

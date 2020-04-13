@@ -166,6 +166,7 @@ class ActionMap : public SimObject
    static const char* buildActionString( const InputEvent* event );
 
    bool processAction(const InputEvent*);
+   bool processLeap(const InputEvent*);
    bool processGesture(const InputEvent*);
    bool processTouch(const InputEvent*);
    bool processButton(const InputEvent*);

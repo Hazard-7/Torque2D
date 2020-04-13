@@ -2541,7 +2541,7 @@ ConsoleMethodWithDocs(SceneObject, getCollisionShapeArea, ConsoleFloat, 3, 3, (i
     if ( shapeIndex >= shapeCount )
     {
         Con::warnf("SceneObject::getCollisionShapeArea() - Invalid shape index of %d.", shapeIndex);
-        return 0.0f;
+        return NULL;
     }
 
     // Calculate area if the shape type is circle
@@ -3244,12 +3244,12 @@ ConsoleMethodWithDocs( SceneObject, getChainCollisionShapeLocalPoint, ConsoleStr
     }
 
     // Fetch point count.
-    const U32 pointCount = object->getChainCollisionShapePointCount( shapeIndex );
+    const U32 pointCount = object->getPolygonCollisionShapePointCount( shapeIndex );
 
     // Sanity!
     if ( pointIndex >= pointCount )
     {
-        Con::warnf("SceneObject::getChainCollisionShapePointCount() - Invalid point index of %d (only %d available) on shape index of %d.", pointIndex, pointCount, shapeIndex);
+        Con::warnf("SceneObject::getPolygonCollisionShapeLocalPoint() - Invalid point index of %d (only %d available) on shape index of %d.", pointIndex, pointCount, shapeIndex);
         return Vector2::getZero().scriptThis();
     }
 

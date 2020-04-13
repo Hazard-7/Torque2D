@@ -133,8 +133,8 @@ void SpriteBatchItem::resetState( void )
 
     mUserData = NULL;
 
-    // Only animates if the scene is not paused.
-    mSelfTick = false;
+    // Require self ticking.
+    mSelfTick = true;
 }
 
 //------------------------------------------------------------------------------
